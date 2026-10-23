@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucas Prince — Praxis Lab / Homo Faber</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonts Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Noto+Serif+JP:wght@300;400;600;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#FCFBF7',        /* Fond blanc papier de riz / Washi */
+                        paperDark: '#F3F1E9',    /* Variantes de fond */
+                        ink: '#0D0D0D',          /* Noir encre de Chine pur */
+                        inkLight: '#333333',     /* Noir lavé */
+                        inkMuted: '#666666',     /* Gris encre délayée */
+                        vermilion: '#D32F2F',    /* Rouge soleil / Sceau Hanko */
+                        vermilionDark: '#9A0007',/* Rouge foncé accostage */
+                    },
+                    fontFamily: {
+                        cinzel: ['Cinzel', 'serif'],
+                        serif: ['Noto Serif JP', 'Cinzel', 'serif'],
+                        mono: ['Space Mono', 'monospace'],
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Styles de base et texture papier */
+        body {
+            background-color: #FCFBF7;
+            color: #0D0D0D;
+            background-image: radial-gradient(rgba(13, 13, 13, 0.03) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Halo interactif au survol du curseur */
+        #cursor-halo {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 400px;
+            height: 400px;
+            margin-left: -200px;
+            margin-top: -200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(211, 47, 47, 0.08) 0%, rgba(211, 47, 47, 0.02) 45%, transparent 70%);
+            transition: transform 0.1s ease-out;
+            z-index: 0;
+        }
+
+        /* Sceau traditionnel rouge (Hanko) */
+        .hanko-stamp {
+            border: 2px solid #D32F2F;
+            color: #D32F2F;
+            padding: 2px 7px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            box-shadow: 0 0 0 1px rgba(211, 47, 47, 0.2);
+            background: rgba(211, 47, 47, 0.03);
+            user-select: none;
+        }
+
+        /* Effet de bordure coup de pinceau d'encre */
+        .ink-border-bottom {
+            border-bottom: 2px solid #0D0D0D;
+            position: relative;
+        }
+
+        .ink-border-bottom::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 30%;
+            height: 2px;
+            background-color: #D32F2F;
+        }
+
+        /* Transitions des onglets */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Personnalisation Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FCFBF7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0D0D0D;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D32F2F;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen relative selection:bg-vermilion selection:text-white flex flex-col justify-between">
+
+    <!-- Halo lumineux fluide suivant la souris -->
+    <div id="cursor-halo"></div>
+
+    <!-- Soleils Rouges esthétiques en filigrane (CSS Pure) -->
+    <div class="fixed -top-20 -right-20 w-96 h-96 rounded-full bg-vermilion/10 pointer-events-none blur-3xl -z-10"></div>
+    <div class="fixed top-36 right-12 w-64 h-64 rounded-full bg-vermilion/80 pointer-events-none -z-10 shadow-2xl opacity-80 mix-blend-multiply"></div>
+
+    <!-- En-tête / Navigation principale -->
+    <header class="sticky top-0 z-40 bg-paper/90 backdrop-blur-md border-b border-ink/10 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-wrap justify-between items-center gap-4">
+            
+            <!-- Logo & Sceau Hanko -->
+            <a href="#" onclick="switchTab('accueil'); return false;" class="flex items-center space-x-3 group">
+                <span class="hanko-stamp font-mono text-sm tracking-tighter">匠</span>
+                <div>
+                    <span class="font-cinzel text-xl font-bold tracking-widest text-ink block group-hover:text-vermilion transition-colors">LUCAS PRINCE</span>
+                    <span class="font-mono text-[10px] text-inkMuted tracking-widest block uppercase">Praxis Lab // Homo Faber</span>
+                </div>
+            </a>
+
+            <!-- Navigation par onglets -->
+            <nav class="flex flex-wrap items-center gap-1 sm:gap-2 font-mono text-xs uppercase tracking-wider">
+                <button onclick="switchTab('accueil')" id="nav-accueil" class="nav-btn px-3 py-2 border-b-2 border-vermilion text-vermilion font-bold transition-all">
+                    Accueil
+                </button>
+                <button onclick="switchTab('art')" id="nav-art" class="nav-btn px-3 py-2 border-b-2 border-transparent text-inkMuted hover:text-ink transition-all">
+                    Peintures
+                </button>
+                <button onclick="switchTab('maker')" id="nav-maker" class="nav-btn px-3 py-2 border-b-2 border-transparent text-inkMuted hover:text-ink transition-all">
+                    Craft & Lab
+                </button>
+                <button onclick="switchTab('aventure')" id="nav-aventure" class="nav-btn px-3 py-2 border-b-2 border-transparent text-inkMuted hover:text-ink transition-all">
+                    Endurance
+                </button>
+                <button onclick="switchTab('parcours')" id="nav-parcours" class="nav-btn px-3 py-2 border-b-2 border-transparent text-inkMuted hover:text-ink transition-all">
+                    Parcours
+                </button>
+                <button onclick="switchTab('contact')" id="nav-contact" class="nav-btn ml-2 px-4 py-2 bg-ink text-paper hover:bg-vermilion transition-colors">
+                    Contact
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- CONTENU PRINCIPAL PAR ONGLETS -->
+    <main class="max-w-7xl mx-auto px-6 py-12 flex-grow w-full relative z-10">
+
+        <!-- ================= ONGLET 1 : ACCUEIL ================= -->
+        <section id="tab-accueil" class="tab-content active space-y-16">
+            
+            <!-- Hero Banner -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-8">
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="inline-flex items-center space-x-2 bg-paperDark border border-ink/10 px-3 py-1 font-mono text-xs text-vermilion">
+                        <span class="w-2 h-2 rounded-full bg-vermilion animate-pulse"></span>
+                        <span>Ingénierie des Matériaux & Artisanat d'Art</span>
+                    </div>
+
+                    <h1 class="font-cinzel text-4xl sm:text-6xl font-black text-ink leading-tight">
+                        Penser par la main,<br>
+                        <span class="text-vermilion italic font-serif">façonner par la matière.</span>
+                    </h1>
+
+                    <p class="font-serif text-lg text-inkLight leading-relaxed max-w-2xl">
+                        Bienvenue dans le <strong class="text-ink font-semibold">Praxis Lab</strong>. Une exploration où la rigueur de l'ingénierie (matériaux, structures, alliages de titane) rencontre l'engagement physique de l'artisanat (encre de Chine, marquetterie, travail du cuir, couture technique) et l'endurance extrême.
+                    </p>
+
+                    <!-- Métriques Clés / Dashboard rapide -->
+                    <div class="grid grid-cols-3 gap-4 pt-4 border-t border-ink/10 font-mono">
+                        <div class="bg-paperDark/60 p-4 border-l-2 border-ink">
+                            <span class="block text-2xl font-bold text-ink">1 850h</span>
+                            <span class="text-xs text-inkMuted">Pratique Encre & Art</span>
+                        </div>
+                        <div class="bg-paperDark/60 p-4 border-l-2 border-vermilion">
+                            <span class="block text-2xl font-bold text-vermilion">420h</span>
+                            <span class="text-xs text-inkMuted">Atelier Craft & Lab</span>
+                        </div>
+                        <div class="bg-paperDark/60 p-4 border-l-2 border-ink">
+                            <span class="block text-2xl font-bold text-ink">14 200km</span>
+                            <span class="text-xs text-inkMuted">Vélopacking & Trail</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex flex-wrap gap-4 font-mono text-xs">
+                        <button onclick="switchTab('art')" class="px-6 py-3 bg-ink text-paper font-bold hover:bg-vermilion transition-colors flex items-center space-x-2">
+                            <span>Explorer les Peintures</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="switchTab('maker')" class="px-6 py-3 border border-ink text-ink font-bold hover:bg-ink hover:text-paper transition-colors">
+                            Voir les Projets Craft
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Illustration centrale / Affiche d'Art & Soleil -->
+                <div class="lg:col-span-5 relative">
+                    <div class="relative mx-auto max-w-sm bg-white p-4 border border-ink/10 shadow-2xl space-y-4">
+                        <div class="aspect-[3/4] bg-neutral-900 relative overflow-hidden group cursor-pointer" onclick="openLightbox('https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1200&q=80', 'Lavis d\'Encre N°7 — Le Grand Silence', 'Encre de Chine sur Papier Washi entoilé — 65 heures de travail')">
+                            <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80" alt="Encre de Chine" class="w-full h-full object-cover grayscale contrast-150 transition-transform duration-700 group-hover:scale-105">
+                            <div class="absolute top-4 right-4 bg-vermilion text-paper font-mono text-xs px-2 py-1 font-bold">65h</div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex flex-col justify-end text-paper">
+                                <span class="font-mono text-xs text-vermilion">Cliquez pour agrandir</span>
+                                <h3 class="font-serif text-xl font-bold">Lavis d'Encre N°7</h3>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center font-mono text-xs text-inkMuted pt-2 border-t border-ink/10">
+                            <span>Pièce phare — Série Shanshui</span>
+                            <span class="hanko-stamp text-[10px]">印</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aperçu des 3 Pilliers -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-ink/10">
+                <div class="p-6 bg-white border border-ink/10 hover:border-vermilion/50 transition-all space-y-3 cursor-pointer" onclick="switchTab('art')">
+                    <div class="w-10 h-10 rounded-full bg-vermilion/10 text-vermilion flex items-center justify-center font-bold">01</div>
+                    <h3 class="font-cinzel text-xl font-bold text-ink">Peintures & Encre</h3>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        Exploration du lavis traditionnel, de l'abstraction au pigment noir et de la rigueur du geste sur papier de riz.
+                    </p>
+                    <span class="font-mono text-xs text-vermilion font-bold inline-flex items-center space-x-1">
+                        <span>Voir les œuvres</span> <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    </span>
+                </div>
+
+                <div class="p-6 bg-white border border-ink/10 hover:border-vermilion/50 transition-all space-y-3 cursor-pointer" onclick="switchTab('maker')">
+                    <div class="w-10 h-10 rounded-full bg-ink text-paper flex items-center justify-center font-bold">02</div>
+                    <h3 class="font-cinzel text-xl font-bold text-ink">Projets Craft & Lab</h3>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        Conception d'objets du quotidien, étuis cuir/feutre, marquetterie, vêtements techniques et électronique embarquée.
+                    </p>
+                    <span class="font-mono text-xs text-ink font-bold inline-flex items-center space-x-1">
+                        <span>Voir l'atelier</span> <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    </span>
+                </div>
+
+                <div class="p-6 bg-white border border-ink/10 hover:border-vermilion/50 transition-all space-y-3 cursor-pointer" onclick="switchTab('aventure')">
+                    <div class="w-10 h-10 rounded-full bg-vermilion/10 text-vermilion flex items-center justify-center font-bold">03</div>
+                    <h3 class="font-cinzel text-xl font-bold text-ink">Endurance & Terrain</h3>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        L'art éprouvé par le paysage. Expeditions en bikepacking, trails au long cours et discipline du tir à l'arc.
+                    </p>
+                    <span class="font-mono text-xs text-vermilion font-bold inline-flex items-center space-x-1">
+                        <span>Voir les carnets</span> <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    </span>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= ONGLET 2 : PEINTURES ================= -->
+        <section id="tab-art" class="tab-content space-y-10">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-ink/10 pb-6">
+                <div>
+                    <span class="font-mono text-xs text-vermilion uppercase tracking-widest">// Section I</span>
+                    <h2 class="font-cinzel text-3xl font-black text-ink mt-1">Peintures, Lavis & Encre</h2>
+                    <p class="font-serif text-sm text-inkMuted mt-2">Gestuelle, noir absolu et réserve blanche sur papier traditionnel.</p>
+                </div>
+
+                <!-- Filtres de la galerie -->
+                <div class="flex flex-wrap gap-2 font-mono text-xs">
+                    <button onclick="filterGallery('all')" class="filter-btn active px-3 py-1 bg-ink text-paper">Tous</button>
+                    <button onclick="filterGallery('encre')" class="filter-btn px-3 py-1 bg-paperDark text-ink">Encre de Chine</button>
+                    <button onclick="filterGallery('aquarelle')" class="filter-btn px-3 py-1 bg-paperDark text-ink">Aquarelle</button>
+                    <button onclick="filterGallery('mixte')" class="filter-btn px-3 py-1 bg-paperDark text-ink">Technique Mixte</button>
+                </div>
+            </div>
+
+            <!-- Grille des Œuvres -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- Œuvre 1 -->
+                <div class="gallery-item encre bg-white p-3 border border-ink/10 shadow-sm group hover:border-vermilion transition-all">
+                    <div class="aspect-[3/4] bg-neutral-100 overflow-hidden relative cursor-pointer" onclick="openLightbox('https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1200&q=80', 'Lavis Montagneux N°1', 'Encre de Chine sur papier Washi — 55 Heures')">
+                        <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80" alt="Encre" class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-3 right-3 bg-paper border border-vermilion text-vermilion font-mono text-[10px] px-2 py-0.5 font-bold">55h</div>
+                    </div>
+                    <div class="pt-4 pb-1 flex justify-between items-baseline">
+                        <h3 class="font-serif text-lg font-bold text-ink group-hover:text-vermilion transition-colors">Lavis Montagneux N°1</h3>
+                        <span class="font-mono text-xs text-inkMuted">2025</span>
+                    </div>
+                    <p class="font-mono text-xs text-inkMuted">Encre de Chine & Eau de roche</p>
+                </div>
+
+                <!-- Œuvre 2 -->
+                <div class="gallery-item aquarelle bg-white p-3 border border-ink/10 shadow-sm group hover:border-vermilion transition-all">
+                    <div class="aspect-[3/4] bg-neutral-100 overflow-hidden relative cursor-pointer" onclick="openLightbox('https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80', 'Soleil Minéral & Pigments Rouge', 'Aquarelle extra-fine & Encre sumi — 40 Heures')">
+                        <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=800&q=80" alt="Pigment" class="w-full h-full object-cover grayscale contrast-150 group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-3 right-3 bg-paper border border-vermilion text-vermilion font-mono text-[10px] px-2 py-0.5 font-bold">40h</div>
+                    </div>
+                    <div class="pt-4 pb-1 flex justify-between items-baseline">
+                        <h3 class="font-serif text-lg font-bold text-ink group-hover:text-vermilion transition-colors">Soleil Minéral</h3>
+                        <span class="font-mono text-xs text-inkMuted">2025</span>
+                    </div>
+                    <p class="font-mono text-xs text-inkMuted">Aquarelle extra-fine & Pigment Vermillon</p>
+                </div>
+
+                <!-- Œuvre 3 -->
+                <div class="gallery-item mixte bg-white p-3 border border-ink/10 shadow-sm group hover:border-vermilion transition-all">
+                    <div class="aspect-[3/4] bg-neutral-100 overflow-hidden relative cursor-pointer" onclick="openLightbox('https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1200&q=80', 'Étude de Structure & Matière', 'Technique mixte encre, graphite et feuille d\'argent — 72 Heures')">
+                        <img src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=800&q=80" alt="Technique mixte" class="w-full h-full object-cover grayscale contrast-125 group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-3 right-3 bg-paper border border-vermilion text-vermilion font-mono text-[10px] px-2 py-0.5 font-bold">72h</div>
+                    </div>
+                    <div class="pt-4 pb-1 flex justify-between items-baseline">
+                        <h3 class="font-serif text-lg font-bold text-ink group-hover:text-vermilion transition-colors">Structure & Matières</h3>
+                        <span class="font-mono text-xs text-inkMuted">2026</span>
+                    </div>
+                    <p class="font-mono text-xs text-inkMuted">Technique mixte & Graphite</p>
+                </div>
+
+                <!-- Œuvre 4 -->
+                <div class="gallery-item encre bg-white p-3 border border-ink/10 shadow-sm group hover:border-vermilion transition-all">
+                    <div class="aspect-[3/4] bg-neutral-100 overflow-hidden relative cursor-pointer" onclick="openLightbox('https://images.unsplash.com/photo-1578926375605-eaf7559b1458?auto=format&fit=crop&w=1200&q=80', 'Calligraphie Abstraite — Le Geste', 'Encre de Chine au grand pinceau — 30 Heures')">
+                        <img src="https://images.unsplash.com/photo-1578926375605-eaf7559b1458?auto=format&fit=crop&w=800&q=80" alt="Encre" class="w-full h-full object-cover grayscale contrast-200 group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-3 right-3 bg-paper border border-vermilion text-vermilion font-mono text-[10px] px-2 py-0.5 font-bold">30h</div>
+                    </div>
+                    <div class="pt-4 pb-1 flex justify-between items-baseline">
+                        <h3 class="font-serif text-lg font-bold text-ink group-hover:text-vermilion transition-colors">Le Geste & L'Empreinte</h3>
+                        <span class="font-mono text-xs text-inkMuted">2024</span>
+                    </div>
+                    <p class="font-mono text-xs text-inkMuted">Encre de Chine sur papier chanvre</p>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ================= ONGLET 3 : CRAFT & LAB ================= -->
+        <section id="tab-maker" class="tab-content space-y-12">
+            
+            <div class="border-b border-ink/10 pb-6">
+                <span class="font-mono text-xs text-vermilion uppercase tracking-widest">// Section II</span>
+                <h2 class="font-cinzel text-3xl font-black text-ink mt-1">Maker, Craft & Objets Physiques</h2>
+                <p class="font-serif text-sm text-inkMuted mt-2">Le laboratoire où l'ingénierie rencontre le travail manuel d'exception.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                <!-- Projet Craft 1 -->
+                <div class="bg-white border border-ink/10 p-6 space-y-4 hover:border-vermilion transition-colors">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-mono text-xs text-vermilion">Fait Main // Cuir & Feutre</span>
+                            <h3 class="font-cinzel text-xl font-bold text-ink">Etui MacBook Magnetise</h3>
+                        </div>
+                        <span class="hanko-stamp text-xs">作</span>
+                    </div>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        Conception et couture point sellier à la main. Feutre de laine dense 4mm et cuir collet végétal. Fermeture magnétique invisible par aimants néodyme intégrés dans l'épaisseur.
+                    </p>
+                    <div class="font-mono text-xs bg-paperDark p-3 space-y-1">
+                        <div><strong class="text-ink">Matériaux :</strong> Cuir collet 2.5mm, Feutre de laine 100%</div>
+                        <div><strong class="text-ink">Temps de fabrication :</strong> 28h</div>
+                    </div>
+                </div>
+
+                <!-- Projet Craft 2 -->
+                <div class="bg-white border border-ink/10 p-6 space-y-4 hover:border-vermilion transition-colors">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-mono text-xs text-vermilion">Électronique & Bois</span>
+                            <h3 class="font-cinzel text-xl font-bold text-ink">Réveil ESP32 & Noyer Massif</h3>
+                        </div>
+                        <span class="hanko-stamp text-xs">作</span>
+                    </div>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        Boîtier taillé dans la masse en noyer d'Auvergne. Affichage matriciel masqué sous placage de bois ultra-fin. Microcontrôleur ESP32 synchronisé en NTP et capteur de qualité d'air.
+                    </p>
+                    <div class="font-mono text-xs bg-paperDark p-3 space-y-1">
+                        <div><strong class="text-ink">Matériaux :</strong> Noyer massif, PCB sur-mesure, C++</div>
+                        <div><strong class="text-ink">Temps de fabrication :</strong> 45h</div>
+                    </div>
+                </div>
+
+                <!-- Projet Craft 3 -->
+                <div class="bg-white border border-ink/10 p-6 space-y-4 hover:border-vermilion transition-colors">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-mono text-xs text-vermilion">Textile Technique</span>
+                            <h3 class="font-cinzel text-xl font-bold text-ink">Veste de Travaill en Laine Brut</h3>
+                        </div>
+                        <span class="hanko-stamp text-xs">作</span>
+                    </div>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        Patronage intégral d'une veste d'inspiration ouvrière. Teinture artisanale à la noix de galle et au fer (nuances d'encre sombre). Boutons façonnés en buis tourné.
+                    </p>
+                    <div class="font-mono text-xs bg-paperDark p-3 space-y-1">
+                        <div><strong class="text-ink">Matériaux :</strong> Draps de laine, Teinture végétale, Buis</div>
+                        <div><strong class="text-ink">Temps de fabrication :</strong> 62h</div>
+                    </div>
+                </div>
+
+                <!-- Projet Craft 4 -->
+                <div class="bg-white border border-ink/10 p-6 space-y-4 hover:border-vermilion transition-colors">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-mono text-xs text-vermilion">Mobilier & Marquetterie</span>
+                            <h3 class="font-cinzel text-xl font-bold text-ink">Banc d'Atelier & Corduroy</h3>
+                        </div>
+                        <span class="hanko-stamp text-xs">作</span>
+                    </div>
+                    <p class="font-sans text-sm text-inkMuted leading-relaxed">
+                        Structure en chêne brûlé selon la technique japonaise Shou Sugi Ban. Assise rembourrée gainée de velours côtelé épais. Assemblages traditionnels à tenon et mortaise.
+                    </p>
+                    <div class="font-mono text-xs bg-paperDark p-3 space-y-1">
+                        <div><strong class="text-ink">Matériaux :</strong> Chêne massif brûlé, Corduroy 500g/m²</div>
+                        <div><strong class="text-ink">Temps de fabrication :</strong> 80h</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ================= ONGLET 4 : ENDURANCE ================= -->
+        <section id="tab-aventure" class="tab-content space-y-12">
+            
+            <div class="border-b border-ink/10 pb-6">
+                <span class="font-mono text-xs text-vermilion uppercase tracking-widest">// Section III</span>
+                <h2 class="font-cinzel text-3xl font-black text-ink mt-1">Endurance, Vélopacking & Tir à l'Arc</h2>
+                <p class="font-serif text-sm text-inkMuted mt-2">La discipline du corps, l'immersion dans l'effort brut et la concentration du tir.</p>
+            </div>
+
+            <!-- Métriques Strava / Aventure -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
+                <div class="bg-white p-4 border border-ink/10 text-center">
+                    <i data-lucide="bike" class="w-6 h-6 mx-auto text-vermilion mb-2"></i>
+                    <span class="text-2xl font-bold text-ink block">9 400 km</span>
+                    <span class="text-xs text-inkMuted">Gravel & Vélopacking</span>
+                </div>
+                <div class="bg-white p-4 border border-ink/10 text-center">
+                    <i data-lucide="mountain" class="w-6 h-6 mx-auto text-ink mb-2"></i>
+                    <span class="text-2xl font-bold text-ink block">+125 000 m</span>
+                    <span class="text-xs text-inkMuted">Dénivelé Positif</span>
+                </div>
+                <div class="bg-white p-4 border border-ink/10 text-center">
+                    <i data-lucide="footprints" class="w-6 h-6 mx-auto text-vermilion mb-2"></i>
+                    <span class="text-2xl font-bold text-ink block">1 800 km</span>
+                    <span class="text-xs text-inkMuted">Trail & Course</span>
+                </div>
+                <div class="bg-white p-4 border border-ink/10 text-center">
+                    <i data-lucide="target" class="w-6 h-6 mx-auto text-ink mb-2"></i>
+                    <span class="text-2xl font-bold text-ink block">70 lbs</span>
+                    <span class="text-xs text-inkMuted">Puissance Arc Traditionnel</span>
+                </div>
+            </div>
+
+            <!-- Carnets de parcours -->
+            <div class="space-y-6">
+                <h3 class="font-cinzel text-xl font-bold text-ink">Expéditions Marquantes</h3>
+
+                <div class="bg-white border border-ink/10 p-6 flex flex-col md:flex-row justify-between gap-6">
+                    <div class="space-y-2">
+                        <span class="font-mono text-xs text-vermilion">Auvergne & Cévennes // 7 Jours</span>
+                        <h4 class="font-serif text-xl font-bold text-ink">Traversée des Volcans en Vélopacking</h4>
+                        <p class="font-sans text-sm text-inkMuted">850 km en autonomie totale, bivouac sous la pluie et pistes d'estive. Test d'équipements fabriqués au labo.</p>
+                    </div>
+                    <div class="font-mono text-xs space-y-1 bg-paperDark p-4 min-w-[200px]">
+                        <div><strong>Distance :</strong> 850 km</div>
+                        <div><strong>D+ :</strong> 14 200 m</div>
+                        <div><strong>Poids bike :</strong> 14.5 kg</div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-ink/10 p-6 flex flex-col md:flex-row justify-between gap-6">
+                    <div class="space-y-2">
+                        <span class="font-mono text-xs text-vermilion">Pratique Instinctive // Tir à l'Arc</span>
+                        <h4 class="font-serif text-xl font-bold text-ink">Discipline de l'Arc Longbow Trad</h4>
+                        <p class="font-sans text-sm text-inkMuted">Recherche du geste épuré sans viseur. La synchronisation de la respiration, du corps et du lâcher de flèche comme rituel d'ancrage.</p>
+                    </div>
+                    <div class="font-mono text-xs space-y-1 bg-paperDark p-4 min-w-[200px]">
+                        <div><strong>Arc :</strong> Longbow Bois 68"</div>
+                        <div><strong>Flèches :</strong> Fût cèdre & plumes</div>
+                        <div><strong>Volées/semaine :</strong> ~300</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= ONGLET 5 : PARCOURS ================= -->
+        <section id="tab-parcours" class="tab-content space-y-12">
+            
+            <div class="border-b border-ink/10 pb-6">
+                <span class="font-mono text-xs text-vermilion uppercase tracking-widest">// Section IV</span>
+                <h2 class="font-cinzel text-3xl font-black text-ink mt-1">Ingénierie & Philosophie</h2>
+                <p class="font-serif text-sm text-inkMuted mt-2">La double culture scientifique et artisanale de Lucas Prince.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                <!-- Bio & Vision -->
+                <div class="md:col-span-7 space-y-6 font-serif text-inkLight leading-relaxed">
+                    <p class="text-lg font-bold text-ink">
+                        "L'Homo Faber ne se contente pas de conceptualiser le monde : il le comprend en l'affrontant physiquement par la matière."
+                    </p>
+                    <p>
+                        Diplômé en ingénierie des matériaux et des structures, mon parcours s'articule autour de la compréhension intime des procédés de fabrication avancés : métallurgie du titane, structures composites, traitements thermiques et optimisation mécanique.
+                    </p>
+                    <p>
+                        Parallèlement, la pratique intensive de l'encre de Chine et du travail manuel en atelier vient nourrir cette rigueur technique d'un rapport poétique au temps, à la patience et à la beauté de l'imperfection.
+                    </p>
+                </div>
+
+                <!-- Timeline / Parcours -->
+                <div class="md:col-span-5 bg-white p-6 border border-ink/10 space-y-6 font-mono text-xs">
+                    <h3 class="font-cinzel text-lg font-bold text-ink border-b border-ink/10 pb-2">Repères & Diplômes</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="border-l-2 border-vermilion pl-4 space-y-1">
+                            <span class="text-vermilion font-bold">2023 — PRÉSENT</span>
+                            <div class="text-ink font-bold">Fondateur // Praxis Lab</div>
+                            <div class="text-inkMuted">Recherche indépendante en design d'objets, encre et structures.</div>
+                        </div>
+
+                        <div class="border-l-2 border-ink pl-4 space-y-1">
+                            <span class="text-inkMuted font-bold">2020 — 2023</span>
+                            <div class="text-ink font-bold">Ingénieur Matériaux & Procédés</div>
+                            <div class="text-inkMuted">Spécialisation alliages légers, fabrication additive titane.</div>
+                        </div>
+
+                        <div class="border-l-2 border-ink pl-4 space-y-1">
+                            <span class="text-inkMuted font-bold">2017 — 2020</span>
+                            <div class="text-ink font-bold">Diplôme d'Ingénieur Grande École</div>
+                            <div class="text-inkMuted">Science des matériaux, mécanique des milieux continus.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= ONGLET 6 : CONTACT ================= -->
+        <section id="tab-contact" class="tab-content space-y-10">
+            
+            <div class="border-b border-ink/10 pb-6">
+                <span class="font-mono text-xs text-vermilion uppercase tracking-widest">// Section V</span>
+                <h2 class="font-cinzel text-3xl font-black text-ink mt-1">Prendre Contact</h2>
+                <p class="font-serif text-sm text-inkMuted mt-2">Pour une acquisition d'œuvre, une collaboration de projet ou échanger sur l'ingénierie.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
+                
+                <div class="md:col-span-5 space-y-6">
+                    <div class="bg-white p-6 border border-ink/10 space-y-4 font-mono text-xs">
+                        <div class="flex items-center space-x-3 text-ink">
+                            <i data-lucide="mail" class="w-4 h-4 text-vermilion"></i>
+                            <span>lucas-prince@outlook.fr</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-ink">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-vermilion"></i>
+                            <span>Atelier Praxis Lab — France</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-ink">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-vermilion"></i>
+                            <span>Disponible pour commandes d'œuvres</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-paperDark border border-ink/10 font-serif text-sm text-inkMuted italic">
+                        "Chaque œuvre ou projet fait l'objet d'un suivi rigoureux et d'un certificat d'authenticité frappé du sceau Hanko."
+                    </div>
+                </div>
+
+                <!-- Formulaire de contact -->
+                <div class="md:col-span-7 bg-white p-8 border border-ink/10 space-y-6">
+                    <form onsubmit="handleFormSubmit(event)" class="space-y-4 font-mono text-xs">
+                        <div>
+                            <label class="block text-ink font-bold mb-2 uppercase">Votre Nom / Maison</label>
+                            <input type="text" required placeholder="Jean Dupont" class="w-full p-3 bg-paper border border-ink/20 focus:border-vermilion outline-none transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-ink font-bold mb-2 uppercase">Adresse E-mail</label>
+                            <input type="email" required placeholder="nom@domaine.com" class="w-full p-3 bg-paper border border-ink/20 focus:border-vermilion outline-none transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-ink font-bold mb-2 uppercase">Objet de la Demande</label>
+                            <select class="w-full p-3 bg-paper border border-ink/20 focus:border-vermilion outline-none transition-colors">
+                                <option>Acquisition d'une peinture / Lavis</option>
+                                <option>Commande d'un objet Craft / Sur-mesure</option>
+                                <option>Collaboration Ingénierie & Design</option>
+                                <option>Autre question</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-ink font-bold mb-2 uppercase">Votre Message</label>
+                            <textarea rows="5" required placeholder="Décrivez votre projet..." class="w-full p-3 bg-paper border border-ink/20 focus:border-vermilion outline-none transition-colors"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-ink text-paper font-bold uppercase hover:bg-vermilion transition-colors flex items-center justify-center space-x-2">
+                            <span>Envoyer le Message</span>
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                    
+                    <div id="form-success" class="hidden p-4 bg-vermilion/10 border border-vermilion text-vermilion font-mono text-xs text-center font-bold">
+                        Votre message a bien été envoyé. Lucas vous répondra sous 24h.
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- LIGHTBOX / ZOOM PHOTO INTERACTIF -->
+    <div id="lightbox" class="fixed inset-0 bg-black/95 z-50 hidden flex-col justify-between p-6 md:p-12 transition-all duration-300">
+        <div class="flex justify-between items-center text-paper font-mono text-xs">
+            <span id="lightbox-title" class="text-vermilion font-bold text-base">Titre de l'œuvre</span>
+            <button onclick="closeLightbox()" class="px-4 py-2 bg-white/10 hover:bg-vermilion text-paper transition-colors">Fermer [X]</button>
+        </div>
+
+        <div class="flex-grow flex items-center justify-center my-4 overflow-hidden">
+            <img id="lightbox-img" src="" alt="Vue agrandie" class="max-h-[75vh] max-w-full object-contain shadow-2xl border border-white/10">
+        </div>
+
+        <div class="text-center font-mono text-xs text-gray-400">
+            <p id="lightbox-desc">Description de la pièce...</p>
+        </div>
+    </div>
+
+
+    <!-- Pied de Page / Signature -->
+    <footer class="border-t border-ink/10 py-10 bg-paper font-mono text-xs text-inkMuted relative z-10">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="hanko-stamp text-[10px]">印</span>
+                <span>© Lucas Prince — Praxis Lab. Tous droits réservés.</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <span>Encre de Chine & Structure</span>
+                <span class="w-2 h-2 rounded-full bg-vermilion"></span>
+                <a href="#top" class="hover:text-vermilion transition-colors">▲ Haut de page</a>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- JAVASCRIPT / INTERACTIONS LOCALES -->
+    <script>
+        // Initialiser les icônes Lucide
+        lucide.createIcons();
+
+        // Gestion de la navigation par Onglets
+        function switchTab(tabId) {
+            // Cacher tous les onglets
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Réinitialiser les styles des boutons
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(btn => {
+                btn.classList.remove('border-vermilion', 'text-vermilion', 'font-bold');
+                btn.classList.add('border-transparent', 'text-inkMuted');
+            });
+
+            // Activer l'onglet choisi
+            const activeTab = document.getElementById('tab-' + tabId);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+
+            // Mettre en valeur le bouton actif
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if (activeBtn && tabId !== 'contact') {
+                activeBtn.classList.remove('border-transparent', 'text-inkMuted');
+                activeBtn.classList.add('border-vermilion', 'text-vermilion', 'font-bold');
+            }
+
+            // Remonter en haut de la zone de contenu
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Effet de halo interactif qui suit la souris
+        const halo = document.getElementById('cursor-halo');
+        window.addEventListener('mousemove', (e) => {
+            halo.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        });
+
+        // Filtrage dynamique de la galerie
+        function filterGallery(category) {
+            const items = document.querySelectorAll('.gallery-item');
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-ink', 'text-paper');
+                btn.classList.add('bg-paperDark', 'text-ink');
+            });
+
+            event.target.classList.remove('bg-paperDark', 'text-ink');
+            event.target.classList.add('bg-ink', 'text-paper');
+
+            items.forEach(item => {
+                if (category === 'all' || item.classList.contains(category)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Lightbox pour agrandir les photos
+        function openLightbox(imgSrc, title, desc) {
+            document.getElementById('lightbox-img').src = imgSrc;
+            document.getElementById('lightbox-title').innerText = title;
+            document.getElementById('lightbox-desc').innerText = desc;
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('hidden');
+            lightbox.classList.add('flex');
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.add('hidden');
+            lightbox.classList.remove('flex');
+        }
+
+        // Gestion de l'envoi du formulaire de contact
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            document.getElementById('form-success').classList.remove('hidden');
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>
